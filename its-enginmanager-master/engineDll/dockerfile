@@ -1,4 +1,0 @@
-FROM microsoft/windowsservercore
-ADD . /test/
-ENTRYPOINT /test/TestDll.exe
-#ENTRYPOINT C:\Windows\System32\ipconfig.exe

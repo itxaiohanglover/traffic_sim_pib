@@ -12,10 +12,7 @@
     
     <!-- 子模块声明 -->
     <modules>
-        <module>its-common-master</module>
-        <module>its-backend-master</module>
-        <module>its-engine-master</module>
-        <module>its-enginmanager-master</module>
+
         <!-- its-new_engine-main 不需要重构，保持原样 -->
     </modules>
     
