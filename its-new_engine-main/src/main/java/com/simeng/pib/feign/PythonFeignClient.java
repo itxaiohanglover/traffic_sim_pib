@@ -1,7 +1,9 @@
 package com.simeng.pib.feign;
 
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author ChonghaoGao
@@ -11,4 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public interface PythonFeignClient {
     @GetMapping("/test")
     String TestPyCon();
+
+    @PostMapping(value = "/fileupload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    String fileUpload(@RequestPart("txtFile") MultipartFile txtFile);
 }
