@@ -2,7 +2,7 @@ import os
 from fastapi import Response
 from fastapi import HTTPException, UploadFile
 from urllib.parse import quote
-from map_convert_services.map_utils import osmtrans, mapmaker, mapmaker_new
+from map_utils import osmtrans, mapmaker, mapmaker_new
 
 
 async def map_convert_to_binary(upload_file: UploadFile, upload_file_path: str) -> Response:

@@ -7,7 +7,8 @@ from starlette.websockets import WebSocket
 
 class SimInfo:
     name:str = field(default='test', metadata={"description": "仿真实例名"})
-    map_xml_name:str = field(default='', metadata={"description": "路网地图内部路径"})
+    map_xml_name:str = field(default='', metadata={"description": "路网地图内部路径文件名称"})
+    map_xml_path:str = field(default='', metadata={"description": "路网地图内部路径含拓展名"})
     sim_dir:str = field(default='', metadata={"description": "仿真文件目录"})
     sim_info:dict = field(default_factory=dict, metadata={"description": "用户设置的仿真信息"})
     control_views:dict = field(default_factory=dict, metadata={"description": "用户设置的插件信息"})
