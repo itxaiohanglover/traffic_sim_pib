@@ -1,25 +1,35 @@
 import os
 import shutil
+import time
 from collections import defaultdict
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated, Dict, List, Optional
+from typing import  Optional
 from zipfile import ZipFile
 
-from fastapi import UploadFile, File, Cookie
+from fastapi import UploadFile, File
 from fastapi.responses import JSONResponse
 import uvicorn
 from fastapi import FastAPI
-from httpcore import Request
 from pydantic import BaseModel
+from starlette.websockets import WebSocketDisconnect, WebSocket
 
-from map_convert_services import sim_plugin
-from map_convert_services.utils.command_runner import RunExe
-from map_convert_services.utils.file_response import map_convert_to_binary, get_safe_path
-from map_convert_services.utils.json_utils import json_to_xml
-from map_convert_services.vo.request_vo import CreateSimengRequest
-from map_convert_services.vo.sim_data_vo import SimInfo
+import sim_plugin
+from utils.command_runner import RunExe
+from utils.file_response import map_convert_to_binary, get_safe_path
+from utils.json_utils import json_to_xml
+from utils.socket_handler import handle_frontend_message, handle_backend_message
+from vo.request_vo import CreateSimengRequest
+from vo.sim_data_vo import SimInfo
 
+# 导入配置
+from config import settings
+
+# 使用配置中的值
+host = settings.host
+LOG_HOME = settings.log_home
+port = settings.port
+client_socket_ip = settings.client_socket_ip
 app = FastAPI()
 
 # 保存缓存的目录
@@ -79,11 +89,9 @@ class ApiResponse(BaseModel):
     addition: Optional[str] = None  # 附加数据（可选）
 @app.post("/init_simeng", response_model=ApiResponse)
 async def create_simeng(request: CreateSimengRequest):
-    # try:
+    try:
         sim_info = request.simInfo
-        print(sim_info)
         user_id = request.userId
-        print(user_id)
         control_views = request.controlViews
         cur_sim_name = sim_info['name']
         id_infos[user_id].name = cur_sim_name
@@ -97,14 +105,10 @@ async def create_simeng(request: CreateSimengRequest):
         cur_sim_plugin_dir = cur_sim_files_dir / "plugins"
         cur_sim_plugin_dir.mkdir(exist_ok=True)
 
-        print(id_infos[user_id].map_xml_name)
-
-        cur_user_sim_xml_path = CACHE_DIR / user_id / id_infos[user_id].map_xml_name
+        cur_user_sim_xml_path = CACHE_DIR / user_id / sim_info['map_xml_name']
         road_xml_file_path = Path(cur_user_sim_xml_path)
-        print(road_xml_file_path)
-        print(road_xml_file_path.name)
         shutil.copy(road_xml_file_path, cur_sim_files_dir)  # 创建路网文件
-
+        id_infos[user_id].map_xml_path = road_xml_file_path
 
 
         od_xml_file_path = Path(cur_sim_files_dir) / "od.xml"
@@ -171,24 +175,27 @@ async def create_simeng(request: CreateSimengRequest):
         else:
             py_home = os.path.join(os.getcwd(), 'pyenv')
             arg_plugin = "--pyhome=\"" + py_home + "\""
-
         arg_sid = "--sid=" + cur_sim_name
         arg_simfile = "--sfile=" + user_id
-        arg_roadfile = "--road=" + Path(id_infos[user_id].map_xml_name).name
-        sim_cmd = ['./SimEngPI/SimulationEngine.exe', '--log=0', arg_sid, arg_simfile, arg_roadfile, '--ip=127.0.0.1',
+        arg_roadfile = "--road=" + Path(id_infos[user_id].map_xml_path).name
+        sim_cmd = ['./SimEngPI/SimulationEngine.exe', '--log=0', arg_sid, arg_simfile, arg_roadfile, '--ip=' + client_socket_ip,
                    '--port=3822', "--noplugin"]  # debug用
-        RunExe(sim_cmd)
+        user_log_file = LOG_HOME + '' + user_id + '.txt'
+        print(' '.join(sim_cmd))
+        print(user_log_file)
+        res = await RunExe(sim_cmd,log_file=user_log_file,output_mode="file")
 
-        return {"res": "ERR_OK", "msg": "ok"}
-    # except Exception as e:
-    #     return JSONResponse(
-    #         status_code=500,
-    #         content={
-    #             "success": False,
-    #             "error": str(e),
-    #             "code": 500
-    #         }
-    #     )
+        return {"res": res,'code':200 ,"eng_msg": 'test_info', "msg": "ok"}
+    except Exception as e:
+        print(e)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e),
+                "code": 500
+            }
+        )
 
 @app.post("/upload_plugin")
 async def upload_plugin(file: UploadFile = File(...)):
@@ -225,5 +232,37 @@ async def upload_plugin(file: UploadFile = File(...)):
     return {"res": "ERR_OK", "msg": "upload plugin ok"}
 
 
+
+
+@app.websocket("/ws/exe/{exe_id}")
+async def exe_websocket(websocket: WebSocket, exe_id: str):
+    cookie_id = exe_id
+    print('[',websocket,']')
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_json()
+            print("Received from Java backend:", data)
+
+            if data['type'] == 'frontend':
+                await handle_frontend_message(websocket, cookie_id, data)
+            elif data['type'] == 'backend':
+                await handle_backend_message(websocket, cookie_id, data)
+            else:
+                print(f"Unknown message type: {data['type']}")
+
+    except WebSocketDisconnect as e:
+        print(f"Connection closed: Code={e.code}, Reason={e.reason}")
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+
+
+def get_current_timestamp_ms():
+    """获取当前时间的毫秒时间戳"""
+    return int(time.time() * 1000)
+
+
+
+
 if __name__ == '__main__':
-    uvicorn.run(app, host='210.41.102.17', port=8000)
+    uvicorn.run(app, host=host, port=port)
