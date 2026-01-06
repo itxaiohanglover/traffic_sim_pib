@@ -1,62 +1,61 @@
 @echo off
-REM 交通仿真系统基础设施启动脚本 (Windows)
+REM Traffic Simulation System Infrastructure Startup Script (Windows)
 
 echo ==========================================
-echo 交通仿真系统基础设施启动脚本
+echo Traffic Simulation System Infrastructure Startup Script
 echo ==========================================
 
-REM 检查 Docker 是否运行
+REM Check if Docker is running
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [错误] Docker 未运行，请先启动 Docker Desktop
+    echo [ERROR] Docker is not running. Please start Docker Desktop first.
     pause
     exit /b 1
 )
 
-REM 检查 Docker Compose 是否安装
+REM Check if Docker Compose is installed
 docker-compose --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [错误] Docker Compose 未安装
+    echo [ERROR] Docker Compose is not installed.
     pause
     exit /b 1
 )
 
-echo [成功] Docker 环境检查通过
+echo [SUCCESS] Docker environment check passed
 echo.
 
-REM 启动服务
-echo 正在启动服务...
+REM Start services
+echo Starting services...
 docker-compose up -d
 
-REM 等待服务启动
+REM Wait for services to start
 echo.
-echo 等待服务启动...
+echo Waiting for services to start...
 timeout /t 10 /nobreak >nul
 
-REM 检查服务状态
+REM Check service status
 echo.
 echo ==========================================
-echo 服务状态:
+echo Service Status:
 echo ==========================================
 docker-compose ps
 
 echo.
 echo ==========================================
-echo 服务访问地址:
+echo Service Access URLs:
 echo ==========================================
 echo MySQL:        localhost:3306
 echo MongoDB:      localhost:27017
 echo Redis:        localhost:6379
 echo Kafka:        localhost:9092
 echo.
-echo 管理工具:
+echo Management Tools:
 echo phpMyAdmin:   http://localhost:8083
 echo Mongo Express: http://localhost:8084
 echo Redis Commander: http://localhost:8082
 echo Kafka UI:     http://localhost:8081
 echo.
 echo ==========================================
-echo [成功] 所有服务已启动
+echo [SUCCESS] All services have been started
 echo ==========================================
 pause
-

@@ -1,13 +1,14 @@
 version: '3.8'
 
+# Core services only (MySQL, MongoDB, Redis, Kafka, Zookeeper)
+# Use this if you have trouble pulling management tool images
+
 services:
   # ============================================
-  # MySQL 数据库服务
+  # MySQL Database
   # ============================================
   mysql:
-    # Using DaoCloud mirror for better connectivity in China
     image: m.daocloud.io/docker.io/library/mysql:8.0
-
     container_name: traffic-sim-mysql
     restart: unless-stopped
     environment:
@@ -37,12 +38,10 @@ services:
       retries: 5
 
   # ============================================
-  # MongoDB 数据库服务
+  # MongoDB Database
   # ============================================
   mongodb:
-    # Using DaoCloud mirror for better connectivity in China
     image: m.daocloud.io/docker.io/library/mongo:7.0
-    
     container_name: traffic-sim-mongodb
     restart: unless-stopped
     environment:
@@ -66,12 +65,10 @@ services:
       retries: 5
 
   # ============================================
-  # Redis 缓存服务
+  # Redis Cache
   # ============================================
   redis:
-    # Using DaoCloud mirror for better connectivity in China
     image: m.daocloud.io/docker.io/library/redis:7.2-alpine
-    
     container_name: traffic-sim-redis
     restart: unless-stopped
     command: redis-server --requirepass redis123 --appendonly yes
@@ -89,10 +86,9 @@ services:
       retries: 5
 
   # ============================================
-  # Kafka 消息队列服务
+  # Zookeeper
   # ============================================
   zookeeper:
-    # Using domestic mirror - DaoCloud's accelerator
     image: m.daocloud.io/docker.io/confluentinc/cp-zookeeper:7.5.0
     container_name: traffic-sim-zookeeper
     restart: unless-stopped
@@ -113,8 +109,10 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================
+  # Kafka
+  # ============================================
   kafka:
-    # Using domestic mirror - DaoCloud's accelerator
     image: m.daocloud.io/docker.io/confluentinc/cp-kafka:7.5.0
     container_name: traffic-sim-kafka
     restart: unless-stopped
@@ -141,90 +139,8 @@ services:
       timeout: 10s
       retries: 5
 
-  # ============================================
-  # Kafka UI (可选，用于管理Kafka)
-  # ============================================
-  kafka-ui:
-    # Using domestic mirror - DaoCloud's accelerator
-    image: m.daocloud.io/docker.io/provectuslabs/kafka-ui:latest
-    container_name: traffic-sim-kafka-ui
-    restart: unless-stopped
-    depends_on:
-      - kafka
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-      TZ: Asia/Shanghai
-    ports:
-      - "8081:8080"
-    networks:
-      - traffic-sim-network
-
-  # ============================================
-  # Redis Commander (可选，用于管理Redis)
-  # # ============================================
-  # redis-commander:
-  #   # Using domestic mirror
-  #   image: m.daocloud.io/docker.io/rediscommander/redis-commander:latest
-  #   container_name: traffic-sim-redis-commander
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - redis
-  #   environment:
-  #     REDIS_HOSTS: local:redis:6379:0:redis123
-  #     TZ: Asia/Shanghai
-  #   ports:
-  #     - "8082:8081"
-  #   networks:
-  #     - traffic-sim-network
-
-  # # ============================================
-  # # phpMyAdmin (可选，用于管理MySQL)
-  # # ============================================
-  # phpmyadmin:
-  #   # Using domestic mirror
-  #   image: m.daocloud.io/docker.io/phpmyadmin/phpmyadmin:latest
-  #   container_name: traffic-sim-phpmyadmin
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - mysql
-  #   environment:
-  #     PMA_HOST: mysql
-  #     PMA_PORT: 3306
-  #     PMA_USER: root
-  #     PMA_PASSWORD: root
-  #     MYSQL_ROOT_PASSWORD: root
-  #     TZ: Asia/Shanghai
-  #   ports:
-  #     - "8083:80"
-  #   networks:
-  #     - traffic-sim-network
-
-  # ============================================
-  # MongoDB Express (可选，用于管理MongoDB)
-  # ============================================
-  # mongo-express:
-  #   # Using domestic mirror
-  #   image: m.daocloud.io/docker.io/mongo-express:latest
-  #   container_name: traffic-sim-mongo-express
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - mongodb
-  #   environment:
-  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
-  #     ME_CONFIG_MONGODB_ADMINPASSWORD: root
-  #     ME_CONFIG_MONGODB_URL: mongodb://root:root@mongodb:27017/
-  #     ME_CONFIG_BASICAUTH_USERNAME: admin
-  #     ME_CONFIG_BASICAUTH_PASSWORD: admin
-  #     TZ: Asia/Shanghai
-  #   ports:
-  #     - "8084:8081"
-  #   networks:
-  #     - traffic-sim-network
-
 # ============================================
-# 数据卷定义
+# Volumes
 # ============================================
 volumes:
   mysql_data:
@@ -243,10 +159,9 @@ volumes:
     driver: local
 
 # ============================================
-# 网络定义
+# Network
 # ============================================
 networks:
   traffic-sim-network:
     driver: bridge
     name: traffic-sim-network
-

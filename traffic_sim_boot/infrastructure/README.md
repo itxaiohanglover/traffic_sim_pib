@@ -30,6 +30,54 @@ infrastructure/
 - Docker Desktop 或 Docker Engine 20.10+
 - Docker Compose 2.0+
 
+### 🌐 配置 Docker 镜像源 (重要)
+
+如果遇到镜像拉取失败问题,请先配置 Docker 镜像源:
+
+#### 方法1: 配置 Docker Desktop (推荐)
+
+1. **打开 Docker Desktop 设置**:
+   - 右键点击托盘图标 → Settings → Docker Engine
+
+2. **添加镜像源配置**:
+```json
+{
+  "registry-mirrors": [
+    "https://registry.cn-hangzhou.aliyuncs.com",
+    "https://mirror.ccs.tencentyun.com",
+    "https://dockerproxy.com",
+    "https://hub-mirror.c.163.com"
+  ]
+}
+```
+
+3. **点击 "Apply & Restart"**
+
+4. **验证配置**:
+```bash
+docker info | findstr Registry
+```
+
+#### 方法2: 使用镜像源修改 docker-compose.yml
+
+如果方法1不起作用,可以编辑 [docker-compose.yml](file:///c:/Users/Astray%20Red/Desktop/github/mystuff/traffic_sim_pib-1/traffic_sim_boot/infrastructure/docker-compose.yml):
+
+- MySQL: 取消注释 `registry.cn-hangzhou.aliyuncs.com/library/mysql:8.0`
+- MongoDB: 取消注释 `registry.cn-hangzhou.aliyuncs.com/library/mongo:7.0`
+- Redis: 取消注释 `registry.cn-hangzhou.aliyuncs.com/library/redis:7.2-alpine`
+
+#### 使用配置脚本
+
+运行配置诊断脚本:
+```powershell
+.\configure-docker-mirror.ps1
+```
+
+该脚本会:
+- 检查 Docker 运行状态
+- 测试各个镜像源连接性
+- 提供配置指导
+
 ### 一键启动所有服务
 
 ```bash
